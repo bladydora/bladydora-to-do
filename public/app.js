@@ -28,18 +28,18 @@ const viewLabels = {
 };
 
 const priorities = {
-  high: { label: "高优先级", short: "高", color: "#e53935", icon: "⚑" },
-  medium: { label: "中优先级", short: "中", color: "#ffab2e", icon: "⚑" },
-  low: { label: "低优先级", short: "低", color: "#4f7cff", icon: "⚑" },
-  none: { label: "无优先级", short: "无", color: "#a8a8a8", icon: "⚐" }
+  high: { label: "高优先级", short: "高", color: "#e53935", icon: "flag" },
+  medium: { label: "中优先级", short: "中", color: "#ffab2e", icon: "flag" },
+  low: { label: "低优先级", short: "低", color: "#4f7cff", icon: "flag" },
+  none: { label: "无优先级", short: "无", color: "#a8a8a8", icon: "flag" }
 };
 
 const palette = ["#ff5e6c", "#ffab2e", "#ffcc2e", "#dfe838", "#36d66f", "#4aa0f2", "#6d6df2", "#20a8c5", "#8b5cf6"];
 
 const viewTypes = [
-  { id: "list", label: "列表", icon: "▤" },
-  { id: "kanban", label: "看板", icon: "▥" },
-  { id: "timeline", label: "时间线", icon: "▧" }
+  { id: "list", label: "列表", icon: "list" },
+  { id: "kanban", label: "看板", icon: "board" },
+  { id: "timeline", label: "时间线", icon: "timeline" }
 ];
 
 const quadrants = [
@@ -77,6 +77,37 @@ function escapeHtml(value = "") {
     "\"": "&quot;",
     "'": "&#39;"
   })[char]);
+}
+
+function icon(name, className = "") {
+  const paths = {
+    check: `<path d="M6.5 12.5l3.4 3.4 7.6-8.3"/>`,
+    task: `<path d="M7 12.5l3 3 7-8"/><rect x="4" y="4" width="16" height="16" rx="5"/>`,
+    calendar: `<rect x="4" y="5.5" width="16" height="15" rx="4"/><path d="M8 3.5v4M16 3.5v4M4 10h16"/>`,
+    inbox: `<path d="M5 7.5h14l-2 9h-3.5l-1.5 2h-4l-1.5-2H3l2-9z"/><path d="M8 7.5l1.5-3h5L16 7.5"/>`,
+    completed: `<path d="M7 12.5l3 3 7-8"/><circle cx="12" cy="12" r="8.5"/>`,
+    quadrant: `<path d="M12 3v18M3 12h18"/><rect x="4" y="4" width="16" height="16" rx="5"/>`,
+    focus: `<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/>`,
+    search: `<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l4 4"/>`,
+    refresh: `<path d="M19 8a7 7 0 0 0-12.2-3.2L5 7M5 4v3h3M5 16a7 7 0 0 0 12.2 3.2L19 17M19 20v-3h-3"/>`,
+    bell: `<path d="M7 10a5 5 0 0 1 10 0v4.5l1.5 2h-13l1.5-2V10z"/><path d="M10 19a2.2 2.2 0 0 0 4 0"/>`,
+    help: `<circle cx="12" cy="12" r="8.5"/><path d="M9.5 9a2.7 2.7 0 1 1 4.2 2.2c-.9.6-1.7 1.1-1.7 2.3M12 17.5h.01"/>`,
+    plus: `<path d="M12 5v14M5 12h14"/>`,
+    drag: `<path d="M6 8h12M6 12h12M6 16h12"/>`,
+    sidebar: `<rect x="4" y="5" width="16" height="14" rx="4"/><path d="M9 5v14"/>`,
+    sort: `<path d="M8 5v14M5.5 7.5L8 5l2.5 2.5M16 19V5M13.5 16.5L16 19l2.5-2.5"/>`,
+    more: `<circle cx="6.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="17.5" cy="12" r="1.2" fill="currentColor" stroke="none"/>`,
+    note: `<path d="M7 6h10M7 10h10M7 14h7"/><rect x="4" y="4" width="16" height="16" rx="5"/>`,
+    checklist: `<path d="M8 8.5l1.5 1.5L12 7.5M14 9h3M8 14.5l1.5 1.5L12 13.5M14 15h3"/><rect x="4" y="4" width="16" height="16" rx="5"/>`,
+    close: `<path d="M7 7l10 10M17 7L7 17"/>`,
+    star: `<path d="M12 4.5l2.3 4.7 5.2.8-3.8 3.7.9 5.2-4.6-2.4-4.6 2.4.9-5.2L4.5 10l5.2-.8L12 4.5z"/>`,
+    flag: `<path d="M7 20V5.5c3-1.6 5 .9 8-1V14c-3 1.9-5-.8-8 1"/>`,
+    tag: `<path d="M4.5 12l7.5-7.5h6.5V11L11 18.5 4.5 12z"/><circle cx="15.5" cy="7.5" r="1.1" fill="currentColor" stroke="none"/>`,
+    list: `<path d="M8 7h10M8 12h10M8 17h10M5 7h.01M5 12h.01M5 17h.01"/>`,
+    board: `<rect x="4" y="5" width="16" height="14" rx="4"/><path d="M10 5v14M15 5v14"/>`,
+    timeline: `<path d="M6 6h7M6 12h12M6 18h9"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>`
+  };
+  return `<svg class="sf-icon ${className}" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.task}</svg>`;
 }
 
 async function api(path, options = {}) {
@@ -199,22 +230,22 @@ function render() {
 
 function renderRail() {
   const items = [
-    ["today", "✓", "任务"],
-    ["next7", "▦", "日历"],
-    ["quadrant", "✣", "四象限"],
-    ["focus", "◎", "专注"],
-    ["search", "⌕", "搜索"]
+    ["today", "task", "任务"],
+    ["next7", "calendar", "日历"],
+    ["quadrant", "quadrant", "四象限"],
+    ["focus", "focus", "专注"],
+    ["search", "search", "搜索"]
   ];
   return `
     <aside class="rail">
       <div class="avatar">Y</div>
-      ${items.map(([view, icon, label]) => `
-        <button class="rail-button ${state.selectedView === view ? "active" : ""}" data-view="${view}" title="${label}">${icon}</button>
+      ${items.map(([view, iconName, label]) => `
+        <button class="rail-button ${state.selectedView === view ? "active" : ""}" data-view="${view}" title="${label}">${icon(iconName)}</button>
       `).join("")}
       <div class="rail-spacer"></div>
-      <button class="rail-button" data-refresh title="刷新">↻</button>
-      <button class="rail-button" title="通知">●</button>
-      <button class="rail-button" title="帮助">?</button>
+      <button class="rail-button" data-refresh title="刷新">${icon("refresh")}</button>
+      <button class="rail-button" title="通知">${icon("bell")}</button>
+      <button class="rail-button" title="帮助">${icon("help")}</button>
     </aside>
   `;
 }
@@ -226,17 +257,17 @@ function renderSide() {
   const completedCount = doneTasks().length;
   return `
     <aside class="side">
-      <button class="nav-row" data-view="today"><span>▣</span><span>今天</span><span class="count">${todayCount}</span></button>
-      <button class="nav-row" data-view="next7"><span>▤</span><span>最近 7 天</span><span class="count">${next7Count}</span></button>
-      <button class="nav-row" data-view="inbox"><span>▱</span><span>收集箱</span><span class="count">${inboxCount}</span></button>
-      <button class="nav-row" data-view="completed"><span>✓</span><span>已完成</span><span class="count">${completedCount}</span></button>
+      <button class="nav-row" data-view="today"><span>${icon("task")}</span><span>今天</span><span class="count">${todayCount}</span></button>
+      <button class="nav-row" data-view="next7"><span>${icon("calendar")}</span><span>最近 7 天</span><span class="count">${next7Count}</span></button>
+      <button class="nav-row" data-view="inbox"><span>${icon("inbox")}</span><span>收集箱</span><span class="count">${inboxCount}</span></button>
+      <button class="nav-row" data-view="completed"><span>${icon("completed")}</span><span>已完成</span><span class="count">${completedCount}</span></button>
 
-      <div class="section-title"><span>清单</span><button class="mini-add" data-add-list title="添加清单">+</button></div>
+      <div class="section-title"><span>清单</span><button class="mini-add" data-add-list title="添加清单">${icon("plus")}</button></div>
       ${sortedLists().map((list) => {
         const count = state.db.tasks.filter((task) => task.status === "open" && task.listId === list.id).length;
         return `
           <div class="list-row ${state.selectedView === "list" && state.selectedListId === list.id ? "active" : ""}" data-list-row="${list.id}" draggable="true">
-            <button class="drag-handle" data-drag-handle title="拖拽排序">☰</button>
+            <button class="drag-handle" data-drag-handle title="拖拽排序">${icon("drag")}</button>
             <button class="row-label" data-list="${list.id}">
             <span>${escapeHtml(list.title)}</span>
             </button>
@@ -246,10 +277,10 @@ function renderSide() {
         `;
       }).join("")}
 
-      <div class="section-title"><span>标签</span><button class="mini-add" data-add-tag title="添加标签">+</button></div>
+      <div class="section-title"><span>标签</span><button class="mini-add" data-add-tag title="添加标签">${icon("plus")}</button></div>
       ${sortedTags().map((tag) => `
         <button class="tag-row ${state.selectedView === "tag" && state.selectedTagId === tag.id ? "active" : ""}" data-tag="${tag.id}">
-          <span class="tag-icon" style="color:${tag.color}"></span>
+          <span class="tag-icon" style="color:${tag.color}">${icon("tag")}</span>
           <span>${escapeHtml(tag.title)}</span>
           <span class="dot" style="background:${tag.color}"></span>
         </button>
@@ -269,10 +300,10 @@ function renderMain() {
   return `
     <main class="main">
       <header class="main-header">
-        <button class="icon-button" title="侧边栏">☰</button>
+        <button class="icon-button" title="侧边栏">${icon("sidebar")}</button>
         <h1 class="main-title">${escapeHtml(viewTitle())}</h1>
-        <button class="icon-button" data-sort title="排序">⇅</button>
-        <button class="icon-button" title="更多">…</button>
+        <button class="icon-button" data-sort title="排序">${icon("sort")}</button>
+        <button class="icon-button" title="更多">${icon("more")}</button>
       </header>
       <form class="add-form" data-add-task>
         <input class="quick-input" name="title" placeholder="+ 添加任务" autocomplete="off" />
@@ -305,13 +336,13 @@ function renderTaskGroup(title, tasks) {
 function renderTaskRow(task) {
   const list = listById(task.listId);
   const priority = priorities[task.priority] || priorities.none;
-  const modeIcon = task.detailMode === "checklist" ? "▤" : "";
+  const modeIcon = task.detailMode === "checklist" ? icon("checklist", "tiny-icon") : "";
   return `
     <div class="task-row ${state.selectedTaskId === task.id ? "selected" : ""}" data-task="${task.id}">
-      <button class="check ${task.status === "done" ? "done" : ""}" data-toggle="${task.id}" title="完成">${task.status === "done" ? "✓" : ""}</button>
+      <button class="check ${task.status === "done" ? "done" : ""}" data-toggle="${task.id}" title="完成">${task.status === "done" ? icon("completed", "checkmark-icon") : ""}</button>
       <button class="task-title ${task.status === "done" ? "done-text" : ""}" data-select-task="${task.id}">${modeIcon ? `<span class="task-mode-icon">${modeIcon}</span>` : ""}${escapeHtml(task.title)}</button>
       <div class="task-meta">
-        <span class="priority-flag" style="color:${priority.color}" title="${priority.label}">${priority.icon}</span>
+        <span class="priority-flag" style="color:${priority.color}" title="${priority.label}">${icon(priority.icon, "tiny-icon")}</span>
         ${list ? `<span>${escapeHtml(list.title)}</span>` : ""}
         ${task.dueDate ? `<span class="due ${dueClass(task)}">${formatDue(task.dueDate)}</span>` : ""}
       </div>
@@ -326,7 +357,7 @@ function renderDetail() {
       <aside class="detail">
         <div class="detail-empty">
           <div>
-            <div style="font-size:58px;margin-bottom:12px;">☆</div>
+            <div class="empty-illustration">${icon("star")}</div>
             <div>选择一条任务查看详情</div>
           </div>
         </div>
@@ -339,15 +370,15 @@ function renderDetail() {
     <aside class="detail">
       <header class="detail-header">
         <div class="detail-tools-left">
-          <button class="mode-button ${task.detailMode === "note" ? "active" : ""}" data-detail-mode="note" title="纯文字模式">▤</button>
+          <button class="mode-button ${task.detailMode === "note" ? "active" : ""}" data-detail-mode="note" title="纯文字模式">${icon("note")}</button>
           <span class="tool-divider"></span>
-          <button class="mode-button ${task.detailMode === "checklist" ? "active" : ""}" data-detail-mode="checklist" title="清单打勾模式">☑</button>
+          <button class="mode-button ${task.detailMode === "checklist" ? "active" : ""}" data-detail-mode="checklist" title="清单打勾模式">${icon("checklist")}</button>
           <input class="date-chip detail-date-input" type="date" data-field="dueDate" value="${escapeHtml(task.dueDate)}" title="设置日期" />
         </div>
         <div class="detail-tools-right">
-          <button class="priority-button" data-priority-menu title="优先级" style="color:${priority.color}">${priority.icon}</button>
+          <button class="priority-button" data-priority-menu title="优先级" style="color:${priority.color}">${icon(priority.icon)}</button>
           ${state.priorityMenuOpen ? renderPriorityMenu(task) : ""}
-          <button class="icon-button" data-close-detail title="关闭">×</button>
+          <button class="icon-button" data-close-detail title="关闭">${icon("close")}</button>
         </div>
       </header>
       <section class="detail-body">
@@ -358,7 +389,7 @@ function renderDetail() {
         <select class="footer-select" data-field="listId">
           ${sortedLists().map((list) => `<option value="${list.id}" ${task.listId === list.id ? "selected" : ""}>${escapeHtml(list.title)}</option>`).join("")}
         </select>
-        <button class="footer-button" data-detail-more title="更多">…</button>
+        <button class="footer-button" data-detail-more title="更多">${icon("more")}</button>
       </footer>
     </aside>
   `;
@@ -369,9 +400,9 @@ function renderPriorityMenu(task) {
     <div class="floating-menu priority-menu">
       ${Object.entries(priorities).map(([id, item]) => `
         <button class="menu-row ${task.priority === id ? "selected" : ""}" data-set-priority="${id}">
-          <span style="color:${item.color}">${item.icon}</span>
+          <span style="color:${item.color}">${icon(item.icon, "tiny-icon")}</span>
           <span>${item.label}</span>
-          <span>${task.priority === id ? "✓" : ""}</span>
+          <span>${task.priority === id ? icon("check", "tiny-icon") : ""}</span>
         </button>
       `).join("")}
     </div>
@@ -400,9 +431,9 @@ function renderChecklistDetail(task) {
     <div class="checklist-editor">
       ${task.checkItems.map((item, index) => `
         <div class="check-item-row">
-          <button class="check ${item.done ? "done" : ""}" data-toggle-check-item="${index}">${item.done ? "✓" : ""}</button>
+          <button class="check ${item.done ? "done" : ""}" data-toggle-check-item="${index}">${item.done ? icon("completed", "checkmark-icon") : ""}</button>
           <input class="check-item-input ${item.done ? "done-text" : ""}" data-check-item-title="${index}" value="${escapeHtml(item.title)}" />
-          <button class="mini-remove" data-remove-check-item="${index}" title="删除">×</button>
+          <button class="mini-remove" data-remove-check-item="${index}" title="删除">${icon("close")}</button>
         </div>
       `).join("")}
       <form class="check-item-row add-check-item" data-add-check-item>
@@ -418,7 +449,7 @@ function renderQuadrantView() {
     <main class="main">
       <header class="main-header">
         <h1 class="main-title">四象限</h1>
-        <button class="icon-button" data-view="today" title="返回任务">✓</button>
+        <button class="icon-button" data-view="today" title="返回任务">${icon("task")}</button>
       </header>
       <section class="content">
         <div class="quadrant-grid">
@@ -452,7 +483,7 @@ function renderFocusView() {
     <main class="main">
       <header class="main-header">
         <h1 class="main-title">番茄专注</h1>
-        <button class="icon-button" title="添加专注记录" data-finish-focus>＋</button>
+        <button class="icon-button" title="添加专注记录" data-finish-focus>${icon("plus")}</button>
       </header>
       <section class="content">
         <div class="focus-view">
@@ -530,7 +561,7 @@ function renderListModal() {
         <div class="modal-form">
           <h2>添加清单</h2>
           <label class="modal-name-field">
-            <span>☰</span>
+            <span>${icon("drag")}</span>
             <input name="title" data-modal-title placeholder="名称" autofocus />
           </label>
           <div class="modal-grid-row">
@@ -542,7 +573,7 @@ function renderListModal() {
           <div class="modal-grid-row">
             <label>视图类型</label>
             <div class="view-type-row">
-              ${viewTypes.map((item) => `<button class="view-type ${selectedViewType === item.id ? "active" : ""}" data-modal-view-type="${item.id}"><span>${item.icon}</span></button>`).join("")}
+              ${viewTypes.map((item) => `<button class="view-type ${selectedViewType === item.id ? "active" : ""}" data-modal-view-type="${item.id}"><span>${icon(item.icon)}</span></button>`).join("")}
             </div>
           </div>
           <label class="modal-grid-row">
@@ -573,7 +604,7 @@ function renderListModal() {
         <div class="modal-preview">
           <div class="preview-card">
             <div class="preview-main">
-              <div class="preview-title"><span>☰</span><strong>名称</strong></div>
+              <div class="preview-title"><span>${icon("drag")}</span><strong>名称</strong></div>
               <div class="preview-line long"></div>
               <div class="preview-line short"></div>
               <div class="preview-task"><span style="border-color:${selectedColor}"></span><i></i></div>
@@ -601,7 +632,7 @@ function renderTagModal() {
         <div class="modal-form full">
           <h2>添加标签</h2>
           <label class="modal-name-field">
-            <span>◇</span>
+            <span>${icon("tag")}</span>
             <input name="title" data-modal-title placeholder="标签名称" autofocus />
           </label>
           <div class="modal-grid-row">

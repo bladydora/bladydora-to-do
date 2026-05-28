@@ -22,6 +22,13 @@
     return NO;
 }
 
+- (BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)flag {
+    if (!flag) {
+        [self showWindowAndActivate];
+    }
+    return YES;
+}
+
 - (void)applicationWillTerminate:(NSNotification *)notification {
     [self.serverTask terminate];
 }
