@@ -1,6 +1,8 @@
 import { createServer } from "node:http";
 import { copyFile, readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { homedir } from "node:os";
 import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +10,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = process.env.PUBLIC_DIR ? resolve(process.env.PUBLIC_DIR) : join(__dirname, "public");
 const dataPath = process.env.DATA_PATH ? resolve(process.env.DATA_PATH) : join(__dirname, "data", "store.json");
 const seedDataPath = join(__dirname, "data", "store.json");
+const userHome = process.env.HOME || homedir();
+const globalTodoPath = process.env.GLOBAL_TODO_PATH
+  ? resolve(process.env.GLOBAL_TODO_PATH)
+  : join(userHome, "YING", "HUMAN", "01 结构", "OPS", "行动清单", "全局待办清单.md");
 const port = Number(process.env.PORT || 4174);
 const host = process.env.HOST || "127.0.0.1";
 
@@ -49,6 +55,10 @@ function makeId(prefix = "task") {
   return `${prefix}-${stamp}-${tail}`;
 }
 
+function makeStableKey(parts) {
+  return createHash("sha1").update(parts.join("|")).digest("hex").slice(0, 16);
+}
+
 async function readJson() {
   await ensureDataFile();
   const raw = await readFile(dataPath, "utf8");
@@ -77,6 +87,8 @@ function migrateDb(db) {
     task.detailMode ||= task.checkItems?.length ? "checklist" : "note";
     if (!Array.isArray(task.checkItems)) task.checkItems = [];
     task.priority ||= "none";
+    task.syncKey ||= "";
+    task.syncSource ||= "";
   });
   return db;
 }
@@ -166,6 +178,160 @@ function parseQuadrant(text) {
   if (/不重要但紧急|第三象限|Q3|q3/.test(text)) return "q3";
   if (/不重要不紧急|第四象限|Q4|q4/.test(text)) return "q4";
   return "";
+}
+
+function parseTableRow(line) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("|") || !trimmed.endsWith("|")) return null;
+  if (/^\|\s*-+/.test(trimmed)) return null;
+  return trimmed
+    .slice(1, -1)
+    .split("|")
+    .map((cell) => cell.trim().replace(/`/g, ""));
+}
+
+function priorityFromGlobalTodo(text) {
+  if (/高/.test(text)) return "high";
+  if (/低/.test(text)) return "low";
+  if (/中/.test(text)) return "medium";
+  return "none";
+}
+
+function dueFromGlobalTodo(text) {
+  if (!text || /待定|尽快|无|--/.test(text)) return "";
+  return parseDate(text);
+}
+
+function listIdFromGlobalTodo(db, row) {
+  const haystack = `${row.title} ${row.domain} ${row.owner} ${row.route}`.toUpperCase();
+  const matched = db.lists.find((list) => haystack.includes(list.title.toUpperCase()) || haystack.includes(list.id.toUpperCase()));
+  if (matched) return matched.id;
+  if (/系统\/行动清单|9004|SIMATRIX/.test(`${row.domain} ${row.owner}`)) return db.lists.find((list) => list.id === "simatrix")?.id || "inbox";
+  if (/会话注册巡检|YING|DISPATCHER/i.test(`${row.domain} ${row.source}`)) return db.lists.find((list) => list.id === "ying")?.id || "inbox";
+  return "inbox";
+}
+
+function taskFromGlobalTodo(db, row) {
+  const rawTitle = row.title.replace(/^【[^】]+】\s*/, "").trim();
+  const [shortTitle, ...detailParts] = rawTitle.split("：");
+  const title = shortTitle.trim() || rawTitle;
+  const titleDetail = detailParts.join("：").trim();
+  const syncKey = `global-md:${makeStableKey([title, row.domain, row.source, row.owner])}`;
+  const priority = priorityFromGlobalTodo(row.priority);
+  return {
+    id: makeId(),
+    title,
+    notes: [
+      titleDetail,
+      row.domain ? `领域：${row.domain}` : "",
+      row.route ? `路由建议：${row.route}` : "",
+      rawTitle !== title ? `原始事项：${rawTitle}` : ""
+    ].filter(Boolean).join("\n"),
+    listId: listIdFromGlobalTodo(db, row),
+    status: "open",
+    priority,
+    quadrant: priority === "high" ? "q1" : "q2",
+    dueDate: dueFromGlobalTodo(row.due),
+    reminderAt: "",
+    repeat: "",
+    tags: [],
+    detailMode: "note",
+    checkItems: [],
+    source: row.source || "全局待办清单",
+    owner: row.owner || "人类 + 9004-行动清单-master-agent",
+    route: row.route || "9004 同步导入",
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    completedAt: "",
+    focusMinutes: 0,
+    syncSource: "global-todo-md",
+    syncKey
+  };
+}
+
+async function readGlobalTodoRows() {
+  if (!existsSync(globalTodoPath)) {
+    return { sourcePath: globalTodoPath, rows: [], error: "未找到全局待办清单文件。" };
+  }
+
+  const raw = await readFile(globalTodoPath, "utf8");
+  const rows = [];
+  let section = "";
+  for (const line of raw.split(/\r?\n/)) {
+    const heading = line.match(/^##\s+(.+?)\s*$/);
+    if (heading) {
+      section = heading[1].trim();
+      continue;
+    }
+    const cells = parseTableRow(line);
+    if (!cells || ["状态", "日期", "完成日期"].includes(cells[0])) continue;
+    if (section === "待办" && cells.length >= 8) {
+      rows.push({
+        section,
+        status: cells[0],
+        rawTitle: cells[1],
+        title: cells[1],
+        domain: cells[2],
+        owner: cells[3],
+        priority: cells[4],
+        due: cells[5],
+        source: cells[6],
+        route: cells[7]
+      });
+    } else if (/已忽略|过期/.test(section) && cells.length >= 5) {
+      rows.push({
+        section,
+        status: "已忽略",
+        rawTitle: cells[1],
+        title: cells[1],
+        domain: cells[2],
+        owner: "",
+        priority: "",
+        due: "",
+        source: cells[3],
+        route: cells[4]
+      });
+    }
+  }
+  return { sourcePath: globalTodoPath, rows, error: "" };
+}
+
+async function previewGlobalTodoSync(db) {
+  const parsed = await readGlobalTodoRows();
+  const result = {
+    sourcePath: parsed.sourcePath,
+    error: parsed.error,
+    candidates: [],
+    duplicates: [],
+    skipped: []
+  };
+  const existingKeys = new Set(db.tasks.map((task) => task.syncKey).filter(Boolean));
+  const existingTitles = new Set(db.tasks.map((task) => `${task.title}|${task.source || ""}`));
+  const seenKeys = new Set();
+
+  parsed.rows.forEach((row) => {
+    if (/已忽略|过期/.test(row.section) || row.status !== "待办") {
+      result.skipped.push({ ...row, reason: "Markdown 已标记为过期/忽略" });
+      return;
+    }
+    if (/\[stale-active-session\]/.test(row.title)) {
+      result.skipped.push({ ...row, reason: "会话巡检过期项，需要人工确认后再导入" });
+      return;
+    }
+    const task = taskFromGlobalTodo(db, row);
+    if (seenKeys.has(task.syncKey)) {
+      result.skipped.push({ ...row, reason: "本次同步中重复" });
+      return;
+    }
+    seenKeys.add(task.syncKey);
+    if (existingKeys.has(task.syncKey) || existingTitles.has(`${task.title}|${task.source || ""}`)) {
+      result.duplicates.push({ ...row, reason: "App 中已存在" });
+      return;
+    }
+    result.candidates.push(task);
+  });
+
+  return result;
 }
 
 function escapeRegExp(text) {
@@ -272,6 +438,17 @@ async function handleApi(req, res, url) {
 
   if (req.method === "GET" && path === "/api/state") {
     return sendJson(res, 200, db);
+  }
+
+  if (req.method === "GET" && path === "/api/sync/global-todos/preview") {
+    return sendJson(res, 200, await previewGlobalTodoSync(db));
+  }
+
+  if (req.method === "POST" && path === "/api/sync/global-todos/apply") {
+    const preview = await previewGlobalTodoSync(db);
+    db.tasks.unshift(...preview.candidates);
+    await writeJson(db);
+    return sendJson(res, 200, { ...preview, imported: preview.candidates.length, db });
   }
 
   if (req.method === "POST" && path === "/api/tasks") {

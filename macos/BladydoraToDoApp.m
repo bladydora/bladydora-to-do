@@ -119,6 +119,7 @@
     NSString *publicPath = [resourcePath stringByAppendingPathComponent:@"public"];
     NSString *supportPath = [[self applicationSupportPath] stringByStandardizingPath];
     NSString *dataPath = [supportPath stringByAppendingPathComponent:@"store.json"];
+    NSString *globalTodoPath = [NSHomeDirectory() stringByAppendingPathComponent:@"YING/HUMAN/01 结构/OPS/行动清单/全局待办清单.md"];
 
     NSError *directoryError = nil;
     [[NSFileManager defaultManager] createDirectoryAtPath:supportPath
@@ -147,7 +148,8 @@
         @"PORT": @"4175",
         @"HOST": @"127.0.0.1",
         @"PUBLIC_DIR": publicPath,
-        @"DATA_PATH": dataPath
+        @"DATA_PATH": dataPath,
+        @"GLOBAL_TODO_PATH": globalTodoPath
     };
 
     NSString *logPath = [supportPath stringByAppendingPathComponent:@"server.log"];

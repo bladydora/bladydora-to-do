@@ -198,6 +198,32 @@ button {
   background: var(--panel-soft);
 }
 
+.sync-entry {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 36px;
+  margin: 4px 0 8px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: #6f6f73;
+  font-size: 13px;
+  font-weight: 650;
+  text-align: left;
+}
+
+.sync-entry:hover {
+  background: #eef3ff;
+  color: var(--blue);
+}
+
+.sync-entry .sf-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .count {
   color: var(--muted);
   font-weight: 600;
@@ -936,6 +962,13 @@ button {
   min-height: auto;
 }
 
+.settings-modal.sync-modal {
+  display: block;
+  width: min(620px, calc(100vw - 56px));
+  min-height: auto;
+  max-height: calc(100vh - 64px);
+}
+
 .modal-close-dot {
   position: absolute;
   top: 20px;
@@ -1114,6 +1147,141 @@ button {
   font-weight: 650;
 }
 
+.sync-modal .modal-close-dot {
+  top: 14px;
+  left: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.sync-modal .modal-form.full {
+  padding: 30px 34px 26px;
+}
+
+.sync-modal .modal-form h2 {
+  margin-bottom: 10px;
+  font-size: 21px;
+  font-weight: 730;
+}
+
+.sync-copy {
+  margin: 0 auto 18px;
+  max-width: 440px;
+  color: #777;
+  font-size: 13px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.sync-error {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff1f2;
+  color: #e53935;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.sync-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sync-summary div {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f5f6f8;
+}
+
+.sync-summary span {
+  display: block;
+  color: #8f8f94;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.sync-summary strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.sync-source {
+  margin-bottom: 12px;
+  color: #aaa;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.sync-list {
+  max-height: min(330px, calc(100vh - 360px));
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.sync-list h3 {
+  margin: 14px 0 8px;
+  color: #8f8f94;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sync-row {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.sync-row strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.sync-row small {
+  display: block;
+  margin-top: 4px;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.sync-status-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: var(--blue);
+}
+
+.sync-row.duplicate .sync-status-dot {
+  background: #f5be31;
+}
+
+.sync-row.skipped .sync-status-dot {
+  background: #c8c8cc;
+}
+
+.small-empty {
+  min-height: 70px;
+  font-size: 13px;
+}
+
+.sync-message {
+  min-height: 18px;
+  margin-top: 10px;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 650;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -1137,6 +1305,11 @@ button {
 .modal-save {
   background: #9fb7ff;
   color: #fff;
+}
+
+.modal-save:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .modal-preview {

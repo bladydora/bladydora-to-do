@@ -10,6 +10,8 @@ const state = {
   nlMessage: "",
   modal: null,
   editingListId: "",
+  syncPreview: null,
+  syncMessage: "",
   contextMenu: null,
   priorityMenuOpen: false,
   timerMode: "pomodoro",
@@ -269,6 +271,10 @@ function renderSide() {
       <button class="nav-row" data-view="next7"><span>${icon("calendar")}</span><span>最近 7 天</span><span class="count">${next7Count}</span></button>
       <button class="nav-row" data-view="inbox"><span>${icon("inbox")}</span><span>收集箱</span><span class="count">${inboxCount}</span></button>
       <button class="nav-row" data-view="completed"><span>${icon("completed")}</span><span>已完成</span><span class="count">${completedCount}</span></button>
+      <button class="sync-entry" data-sync-global title="从 Markdown 全局待办清单同步">
+        <span>${icon("refresh")}</span>
+        <span>同步全局待办</span>
+      </button>
 
       <div class="section-title"><span>清单</span><button class="mini-add" data-add-list title="添加清单">${icon("plus")}</button></div>
       ${sortedLists().map((list) => {
@@ -557,7 +563,59 @@ function renderModal() {
   if (state.modal === "list") return renderListModal();
   if (state.modal === "tag") return renderTagModal();
   if (state.modal === "focusRecord") return renderFocusRecordModal();
+  if (state.modal === "syncGlobal") return renderSyncGlobalModal();
   return "";
+}
+
+function renderSyncGlobalModal() {
+  const preview = state.syncPreview;
+  const candidates = preview?.candidates || [];
+  const duplicates = preview?.duplicates || [];
+  const skipped = preview?.skipped || [];
+  return `
+    <div class="modal-backdrop" data-close-modal>
+      <section class="settings-modal sync-modal" data-modal-panel>
+        <button class="modal-close-dot" data-close-modal title="关闭"></button>
+        <div class="modal-form full">
+          <h2>同步全局待办</h2>
+          <p class="sync-copy">由 9004 从 Markdown 台账读取待办，先过滤过期项和重复项，再导入 App。</p>
+          ${preview?.error ? `<div class="sync-error">${escapeHtml(preview.error)}</div>` : ""}
+          ${preview ? `
+            <div class="sync-summary">
+              <div><span>可导入</span><strong>${candidates.length}</strong></div>
+              <div><span>已存在</span><strong>${duplicates.length}</strong></div>
+              <div><span>已忽略</span><strong>${skipped.length}</strong></div>
+            </div>
+            <div class="sync-source">${escapeHtml(preview.sourcePath || "")}</div>
+            <div class="sync-list">
+              ${candidates.length ? `<h3>准备导入</h3>${candidates.map((task) => renderSyncRow(task, "candidate")).join("")}` : `<div class="empty-note small-empty">没有新的可导入待办</div>`}
+              ${duplicates.length ? `<h3>已存在</h3>${duplicates.map((row) => renderSyncRow(row, "duplicate")).join("")}` : ""}
+              ${skipped.length ? `<h3>已忽略/过期</h3>${skipped.map((row) => renderSyncRow(row, "skipped")).join("")}` : ""}
+            </div>
+          ` : `<div class="empty-note small-empty">正在读取全局待办清单...</div>`}
+          <div class="sync-message">${escapeHtml(state.syncMessage)}</div>
+          <div class="modal-actions">
+            <button class="modal-cancel" data-close-modal>取消</button>
+            <button class="modal-save" data-apply-global-sync ${candidates.length ? "" : "disabled"}>导入 ${candidates.length}</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function renderSyncRow(item, type) {
+  const title = item.title || item.rawTitle || "";
+  const meta = [item.source, item.owner, item.reason].filter(Boolean).join(" · ");
+  return `
+    <div class="sync-row ${type}">
+      <span class="sync-status-dot"></span>
+      <div>
+        <strong>${escapeHtml(title)}</strong>
+        <small>${escapeHtml(meta)}</small>
+      </div>
+    </div>
+  `;
 }
 
 function renderFocusRecordModal() {
@@ -823,6 +881,7 @@ function bindEvents() {
   document.addEventListener("click", closeContextMenuOnce, { once: true });
 
   document.querySelector("[data-refresh]")?.addEventListener("click", load);
+  document.querySelector("[data-sync-global]")?.addEventListener("click", openGlobalSyncModal);
   document.querySelector("[data-close-detail]")?.addEventListener("click", () => {
     state.selectedTaskId = "";
     state.priorityMenuOpen = false;
@@ -987,7 +1046,32 @@ function bindModalEvents() {
   document.querySelector("[data-save-list]")?.addEventListener("click", saveListFromModal);
   document.querySelector("[data-save-tag]")?.addEventListener("click", saveTagFromModal);
   document.querySelector("[data-save-focus-record]")?.addEventListener("click", saveFocusRecordFromModal);
+  document.querySelector("[data-apply-global-sync]")?.addEventListener("click", applyGlobalSync);
   document.querySelector("[data-modal-title]")?.focus();
+}
+
+async function openGlobalSyncModal() {
+  state.modal = "syncGlobal";
+  state.syncPreview = null;
+  state.syncMessage = "";
+  render();
+  try {
+    state.syncPreview = await api("/api/sync/global-todos/preview");
+  } catch (error) {
+    state.syncPreview = { error: error.message, candidates: [], duplicates: [], skipped: [] };
+  }
+  render();
+}
+
+async function applyGlobalSync() {
+  const candidates = state.syncPreview?.candidates || [];
+  if (!candidates.length) return;
+  const result = await api("/api/sync/global-todos/apply", { method: "POST" });
+  state.db = result.db;
+  normalizeState();
+  state.syncPreview = result;
+  state.syncMessage = `已导入 ${result.imported || 0} 条待办。`;
+  render();
 }
 
 async function saveListFromModal() {
