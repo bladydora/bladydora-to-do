@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "updatedAt": "2026-05-28T02:17:01.440Z"
+  },
+  "lists": [
+    {
+      "id": "inbox",
+      "title": "收集箱",
+      "color": "#64748b",
+      "archived": false
+    },
+    {
+      "id": "ying",
+      "title": "YING",
+      "color": "#4f7cff",
+      "archived": false
+    },
+    {
+      "id": "simatrix",
+      "title": "SIMATRIX",
+      "color": "#ef5b62",
+      "archived": false
+    },
+    {
+      "id": "tjauto",
+      "title": "TJAUTO",
+      "color": "#58d6ad",
+      "archived": false
+    },
+    {
+      "id": "family",
+      "title": "FAMILY",
+      "color": "#f5be31",
+      "archived": false
+    },
+    {
+      "id": "self-dev",
+      "title": "SELF devp",
+      "color": "#ff6464",
+      "archived": false
+    }
+  ],
+  "tags": [
+    {
+      "id": "project",
+      "title": "项目",
+      "color": "#ef5b62"
+    },
+    {
+      "id": "management",
+      "title": "管理",
+      "color": "#f5c344"
+    },
+    {
+      "id": "offline",
+      "title": "线下",
+      "color": "#20a8c5"
+    },
+    {
+      "id": "review",
+      "title": "需确认",
+      "color": "#8b5cf6"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-20260528-0001",
+      "title": "确认行动清单的周期规则",
+      "notes": "是否每天/每周汇总、是否需要企业微信推送。",
+      "listId": "ying",
+      "status": "open",
+      "priority": "medium",
+      "quadrant": "q2",
+      "dueDate": "",
+      "reminderAt": "",
+      "repeat": "",
+      "tags": [
+        "review"
+      ],
+      "source": "Dispatcher",
+      "owner": "人类 + 9004-行动清单-master-agent",
+      "route": "等人类后续确认",
+      "createdAt": "2026-05-28T00:00:00.000Z",
+      "updatedAt": "2026-05-28T00:00:00.000Z",
+      "completedAt": "",
+      "focusMinutes": 0
+    }
+  ],
+  "focusSessions": []
+}
