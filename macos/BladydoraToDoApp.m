@@ -43,14 +43,13 @@
                   styleMask:NSWindowStyleMaskTitled |
                             NSWindowStyleMaskClosable |
                             NSWindowStyleMaskMiniaturizable |
-                            NSWindowStyleMaskResizable |
-                            NSWindowStyleMaskFullSizeContentView
+                            NSWindowStyleMaskResizable
                     backing:NSBackingStoreBuffered
                       defer:NO];
     self.window.title = @"Bladydora To Do";
     self.window.releasedWhenClosed = NO;
-    self.window.titlebarAppearsTransparent = YES;
     self.window.titleVisibility = NSWindowTitleHidden;
+    self.window.movableByWindowBackground = YES;
     self.window.minSize = NSMakeSize(1040, 680);
     self.window.contentView = self.webView;
     [self.window center];
