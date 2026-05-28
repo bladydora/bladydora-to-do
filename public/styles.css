@@ -264,7 +264,8 @@ button {
 .main-title {
   margin: 0;
   flex: 1;
-  font-size: 28px;
+  font-size: 24px;
+  font-weight: 750;
   line-height: 1.2;
 }
 
@@ -291,9 +292,9 @@ button {
 }
 
 .quick-input {
-  height: 52px;
-  padding: 0 18px;
-  font-size: 18px;
+  height: 48px;
+  padding: 0 16px;
+  font-size: 16px;
 }
 
 .quick-input::placeholder,
@@ -332,13 +333,13 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 22px 0 8px;
-  font-size: 18px;
-  font-weight: 800;
+  margin: 20px 0 8px;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .task-group-title .count {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .task-row {
@@ -382,8 +383,8 @@ button {
 
 .task-title {
   min-width: 0;
-  font-size: 18px;
-  font-weight: 650;
+  font-size: 16px;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -476,8 +477,8 @@ button {
   width: 100%;
   border: 0;
   outline: 0;
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 21px;
+  font-weight: 650;
   line-height: 1.25;
   min-height: 68px;
   resize: vertical;
@@ -485,9 +486,9 @@ button {
 }
 
 .detail-title-input {
-  min-height: 76px;
+  min-height: 68px;
   margin-bottom: 14px;
-  font-size: 26px;
+  font-size: 22px;
 }
 
 .detail-tools-left,
@@ -581,14 +582,14 @@ button {
   outline: 0;
   resize: vertical;
   color: #777;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.6;
 }
 
 .description-label {
   color: #aaa;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 650;
   margin: 8px 0 18px;
 }
 
@@ -611,7 +612,7 @@ button {
   min-width: 0;
   color: #777;
   background: transparent;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .mini-remove {
