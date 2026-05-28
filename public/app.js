@@ -9,6 +9,8 @@ const state = {
   searchText: "",
   nlMessage: "",
   modal: null,
+  editingListId: "",
+  contextMenu: null,
   priorityMenuOpen: false,
   timerMode: "pomodoro",
   timerSeconds: 25 * 60,
@@ -229,6 +231,7 @@ function render() {
     ${renderMain()}
     ${renderDetail()}
     ${renderModal()}
+    ${renderContextMenu()}
   `;
   bindEvents();
 }
@@ -602,18 +605,33 @@ function renderFocusRecordModal() {
   `;
 }
 
+function renderContextMenu() {
+  if (!state.contextMenu) return "";
+  return `
+    <div class="context-menu" style="left:${state.contextMenu.x}px;top:${state.contextMenu.y}px;" data-context-menu>
+      <button data-edit-list="${state.contextMenu.listId}">编辑</button>
+      <button disabled>置顶</button>
+      <button disabled>分享</button>
+      <button disabled>复制</button>
+      <button disabled>归档</button>
+      <button disabled>删除</button>
+    </div>
+  `;
+}
+
 function renderListModal() {
-  const selectedColor = state.modalColor || palette[0];
-  const selectedViewType = state.modalViewType || "list";
+  const editingList = state.editingListId ? listById(state.editingListId) : null;
+  const selectedColor = state.modalColor || editingList?.color || palette[0];
+  const selectedViewType = state.modalViewType || editingList?.viewType || "list";
   return `
     <div class="modal-backdrop" data-close-modal>
       <section class="settings-modal wide" data-modal-panel>
         <button class="modal-close-dot" data-close-modal title="关闭"></button>
         <div class="modal-form">
-          <h2>添加清单</h2>
+          <h2>${editingList ? "编辑清单" : "添加清单"}</h2>
           <label class="modal-name-field">
             <span>${icon("drag")}</span>
-            <input name="title" data-modal-title placeholder="名称" autofocus />
+            <input name="title" data-modal-title placeholder="名称" value="${escapeHtml(editingList?.title || "")}" autofocus />
           </label>
           <div class="modal-grid-row">
             <label>清单颜色</label>
@@ -636,15 +654,15 @@ function renderListModal() {
           <label class="modal-grid-row">
             <span>清单类型</span>
             <select class="modal-select" data-modal-list-type>
-              <option value="task">任务清单</option>
-              <option value="note">笔记清单</option>
+              <option value="task" ${(editingList?.listType || "task") === "task" ? "selected" : ""}>任务清单</option>
+              <option value="note" ${editingList?.listType === "note" ? "selected" : ""}>笔记清单</option>
             </select>
           </label>
           <label class="modal-grid-row">
             <span>在智能清单显示</span>
             <select class="modal-select" data-modal-smart-display>
-              <option value="all">所有任务</option>
-              <option value="none">不显示</option>
+              <option value="all" ${(editingList?.smartDisplay || "all") === "all" ? "selected" : ""}>所有任务</option>
+              <option value="none" ${editingList?.smartDisplay === "none" ? "selected" : ""}>不显示</option>
             </select>
           </label>
           <div class="modal-actions">
@@ -750,6 +768,12 @@ window.bladydoraOpenSearch = () => {
   focusAfterRender("[data-search-input]");
 };
 
+function closeContextMenuOnce() {
+  if (!state.contextMenu) return;
+  state.contextMenu = null;
+  render();
+}
+
 function bindEvents() {
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -760,6 +784,7 @@ function bindEvents() {
 
   document.querySelectorAll("[data-list]").forEach((button) => {
     button.addEventListener("click", () => {
+      state.contextMenu = null;
       state.selectedView = "list";
       state.selectedListId = button.dataset.list;
       render();
@@ -768,11 +793,34 @@ function bindEvents() {
 
   document.querySelectorAll("[data-tag]").forEach((button) => {
     button.addEventListener("click", () => {
+      state.contextMenu = null;
       state.selectedView = "tag";
       state.selectedTagId = button.dataset.tag;
       render();
     });
   });
+
+  document.querySelectorAll("[data-list-row]").forEach((row) => {
+    row.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      state.contextMenu = { type: "list", listId: row.dataset.listRow, x: event.clientX, y: event.clientY };
+      render();
+    });
+  });
+
+  document.querySelector("[data-context-menu]")?.addEventListener("click", (event) => event.stopPropagation());
+  document.querySelector("[data-edit-list]")?.addEventListener("click", () => {
+    const list = listById(state.contextMenu?.listId);
+    if (!list) return;
+    state.modal = "list";
+    state.editingListId = list.id;
+    state.modalColor = list.color;
+    state.modalViewType = list.viewType || "list";
+    state.contextMenu = null;
+    render();
+  });
+
+  document.addEventListener("click", closeContextMenuOnce, { once: true });
 
   document.querySelector("[data-refresh]")?.addEventListener("click", load);
   document.querySelector("[data-close-detail]")?.addEventListener("click", () => {
@@ -811,8 +859,10 @@ function bindEvents() {
 
   document.querySelector("[data-add-list]")?.addEventListener("click", () => {
     state.modal = "list";
+    state.editingListId = "";
     state.modalColor = palette[0];
     state.modalViewType = "list";
+    state.contextMenu = null;
     render();
   });
 
@@ -918,6 +968,7 @@ function bindModalEvents() {
   document.querySelectorAll("[data-close-modal]").forEach((button) => {
     button.addEventListener("click", () => {
       state.modal = null;
+      state.editingListId = "";
       render();
     });
   });
@@ -942,19 +993,22 @@ function bindModalEvents() {
 async function saveListFromModal() {
   const title = document.querySelector("[data-modal-title]")?.value.trim();
   if (!title) return;
-  const list = await api("/api/lists", {
-    method: "POST",
-    body: {
-      title,
-      color: state.modalColor || palette[0],
-      viewType: state.modalViewType || "list",
-      folderId: document.querySelector("[data-modal-folder]")?.value || "",
-      listType: document.querySelector("[data-modal-list-type]")?.value || "task",
-      smartDisplay: document.querySelector("[data-modal-smart-display]")?.value || "all"
-    }
-  });
-  state.db.lists.push(list);
+  const body = {
+    title,
+    color: state.modalColor || palette[0],
+    viewType: state.modalViewType || "list",
+    folderId: document.querySelector("[data-modal-folder]")?.value || "",
+    listType: document.querySelector("[data-modal-list-type]")?.value || "task",
+    smartDisplay: document.querySelector("[data-modal-smart-display]")?.value || "all"
+  };
+  const list = state.editingListId
+    ? await api(`/api/lists/${state.editingListId}`, { method: "PATCH", body })
+    : await api("/api/lists", { method: "POST", body });
+  const current = state.db.lists.find((item) => item.id === list.id);
+  if (current) Object.assign(current, list);
+  else state.db.lists.push(list);
   state.modal = null;
+  state.editingListId = "";
   state.selectedView = "list";
   state.selectedListId = list.id;
   render();
