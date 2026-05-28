@@ -902,7 +902,7 @@ button {
 
 .settings-modal.focus-record-modal {
   display: block;
-  width: min(720px, calc(100vw - 56px));
+  width: min(560px, calc(100vw - 56px));
   min-height: auto;
 }
 
@@ -1028,6 +1028,60 @@ button {
   outline: 0;
   resize: vertical;
   font-size: 18px;
+}
+
+.focus-record-modal .modal-close-dot {
+  top: 14px;
+  left: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.focus-record-modal .modal-form.full {
+  padding: 28px 32px 24px;
+}
+
+.focus-record-modal .modal-form h2 {
+  margin-bottom: 24px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.focus-record-modal .modal-grid-row {
+  grid-template-columns: 96px 1fr;
+  gap: 12px;
+  min-height: 52px;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.focus-record-modal .modal-select {
+  height: 38px;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.focus-record-modal .modal-textarea {
+  min-height: 96px;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.focus-record-modal .modal-actions {
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.focus-record-modal .modal-cancel,
+.focus-record-modal .modal-save {
+  min-width: 86px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 650;
 }
 
 .modal-actions {
