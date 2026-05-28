@@ -5,6 +5,7 @@
 @property(nonatomic, strong) NSWindow *window;
 @property(nonatomic, strong) WKWebView *webView;
 @property(nonatomic, strong) NSTask *serverTask;
+@property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, assign) NSInteger attempts;
 @end
 
@@ -13,11 +14,12 @@
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
     [self startServer];
     [self createWindow];
+    [self setupStatusItem];
     [self loadAppWhenReady];
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
-    return YES;
+    return NO;
 }
 
 - (void)applicationWillTerminate:(NSNotification *)notification {
@@ -39,12 +41,70 @@
                     backing:NSBackingStoreBuffered
                       defer:NO];
     self.window.title = @"Bladydora To Do";
+    self.window.releasedWhenClosed = NO;
     self.window.titlebarAppearsTransparent = YES;
     self.window.titleVisibility = NSWindowTitleHidden;
     self.window.minSize = NSMakeSize(1040, 680);
     self.window.contentView = self.webView;
     [self.window center];
     [self.window makeKeyAndOrderFront:nil];
+}
+
+- (void)setupStatusItem {
+    self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSSquareStatusItemLength];
+    self.statusItem.button.title = @"✓";
+    self.statusItem.button.toolTip = @"Bladydora To Do";
+
+    NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Bladydora To Do"];
+    [self addMenuItem:@"打开行动清单" action:@selector(openMainWindow:) toMenu:menu];
+    [self addMenuItem:@"快速添加任务" action:@selector(quickAddTask:) toMenu:menu];
+    [self addMenuItem:@"番茄计时" action:@selector(showPomodoro:) toMenu:menu];
+    [self addMenuItem:@"搜索" action:@selector(showSearch:) toMenu:menu];
+    [menu addItem:[NSMenuItem separatorItem]];
+    [self addMenuItem:@"退出 Bladydora To Do" action:@selector(quitApp:) toMenu:menu];
+    self.statusItem.menu = menu;
+}
+
+- (void)addMenuItem:(NSString *)title action:(SEL)action toMenu:(NSMenu *)menu {
+    NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:title action:action keyEquivalent:@""];
+    item.target = self;
+    [menu addItem:item];
+}
+
+- (void)showWindowAndActivate {
+    if (!self.window || !self.webView) {
+        [self createWindow];
+        [self loadAppWhenReady];
+    }
+    [NSApp activateIgnoringOtherApps:YES];
+    [self.window makeKeyAndOrderFront:nil];
+}
+
+- (void)evaluateAppScript:(NSString *)script {
+    [self showWindowAndActivate];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self.webView evaluateJavaScript:script completionHandler:nil];
+    });
+}
+
+- (void)openMainWindow:(id)sender {
+    [self showWindowAndActivate];
+}
+
+- (void)quickAddTask:(id)sender {
+    [self evaluateAppScript:@"window.bladydoraOpenQuickAdd && window.bladydoraOpenQuickAdd();"];
+}
+
+- (void)showPomodoro:(id)sender {
+    [self evaluateAppScript:@"window.bladydoraSelectView && window.bladydoraSelectView('focus');"];
+}
+
+- (void)showSearch:(id)sender {
+    [self evaluateAppScript:@"window.bladydoraOpenSearch && window.bladydoraOpenSearch();"];
+}
+
+- (void)quitApp:(id)sender {
+    [NSApp terminate:nil];
 }
 
 - (void)startServer {

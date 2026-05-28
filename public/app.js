@@ -92,6 +92,8 @@ async function api(path, options = {}) {
 async function load() {
   state.db = await api("/api/state");
   normalizeState();
+  const initialView = new URLSearchParams(window.location.search).get("view");
+  if (initialView) selectView(initialView, { preserveTask: true });
   render();
 }
 
@@ -631,12 +633,45 @@ function formatSeconds(total) {
   return `${min}:${sec}`;
 }
 
+function selectView(view, options = {}) {
+  const allowedViews = new Set(["today", "next7", "inbox", "completed", "quadrant", "focus", "search"]);
+  if (!allowedViews.has(view)) return;
+  state.selectedView = view;
+  state.selectedListId = "";
+  state.selectedTagId = "";
+  state.priorityMenuOpen = false;
+  if (!options.preserveTask) state.selectedTaskId = state.selectedTaskId || "";
+}
+
+function focusAfterRender(selector) {
+  requestAnimationFrame(() => {
+    const element = document.querySelector(selector);
+    element?.focus();
+    element?.select?.();
+  });
+}
+
+window.bladydoraSelectView = (view) => {
+  selectView(view);
+  render();
+};
+
+window.bladydoraOpenQuickAdd = () => {
+  selectView("today");
+  render();
+  focusAfterRender("[data-add-task] input[name='title']");
+};
+
+window.bladydoraOpenSearch = () => {
+  selectView("search");
+  render();
+  focusAfterRender("[data-search-input]");
+};
+
 function bindEvents() {
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.selectedView = button.dataset.view;
-      state.selectedListId = "";
-      state.selectedTagId = "";
+      selectView(button.dataset.view);
       render();
     });
   });
