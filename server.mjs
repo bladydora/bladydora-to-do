@@ -1,12 +1,13 @@
 import { createServer } from "node:http";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { copyFile, readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { dirname, extname, join, normalize } from "node:path";
+import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const publicDir = join(__dirname, "public");
-const dataPath = join(__dirname, "data", "store.json");
+const publicDir = process.env.PUBLIC_DIR ? resolve(process.env.PUBLIC_DIR) : join(__dirname, "public");
+const dataPath = process.env.DATA_PATH ? resolve(process.env.DATA_PATH) : join(__dirname, "data", "store.json");
+const seedDataPath = join(__dirname, "data", "store.json");
 const port = Number(process.env.PORT || 4174);
 const host = process.env.HOST || "127.0.0.1";
 
@@ -49,8 +50,26 @@ function makeId(prefix = "task") {
 }
 
 async function readJson() {
+  await ensureDataFile();
   const raw = await readFile(dataPath, "utf8");
   return JSON.parse(raw);
+}
+
+async function ensureDataFile() {
+  if (existsSync(dataPath)) return;
+  await mkdir(dirname(dataPath), { recursive: true });
+  if (existsSync(seedDataPath) && seedDataPath !== dataPath) {
+    await copyFile(seedDataPath, dataPath);
+    return;
+  }
+  const emptyDb = {
+    meta: { schemaVersion: 1, updatedAt: nowIso() },
+    lists: [{ id: "inbox", title: "收集箱", color: "#64748b", archived: false }],
+    tags: [],
+    tasks: [],
+    focusSessions: []
+  };
+  await writeFile(dataPath, `${JSON.stringify(emptyDb, null, 2)}\n`, "utf8");
 }
 
 async function writeJson(db) {

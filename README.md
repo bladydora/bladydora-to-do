@@ -1,9 +1,9 @@
-# Bladydora To Do
-
-一个受滴答清单界面启发的本地待办应用，用于维护 YING/9004 行动清单。它支持手动点击维护，也支持通过自然语言指令写入本地数据库。
+# 行动清单本地应用
 
 > 负责 Agent：`9004-行动清单-master-agent`
 > 首版日期：2026-05-28
+
+这个目录是行动清单的本地可点击界面。它不直接读取滴答清单数据库，而是在 YING 工作区内维护一份可控的本地数据，方便人类手动点击，也方便 Codex/9004 通过自然语言或文件编辑维护。
 
 GitHub 仓库：
 
@@ -11,9 +11,35 @@ GitHub 仓库：
 https://github.com/bladydora/bladydora-to-do
 ```
 
-这个目录是行动清单的本地可点击界面。它不直接读取滴答清单数据库，而是在 YING 工作区内维护一份可控的本地数据，方便人类手动点击，也方便 Codex/9004 通过自然语言或文件编辑维护。
-
 ## 启动
+
+macOS App 方式：
+
+```text
+双击 dist/Bladydora To Do.app
+```
+
+这个方式会打开一个普通 macOS 软件窗口，没有浏览器地址栏。App 内部使用 `4175` 端口启动本地服务，数据保存在：
+
+```text
+~/Library/Application Support/Bladydora To Do/store.json
+```
+
+重新构建 App：
+
+```bash
+./macos/build_app.sh
+```
+
+最简单的手动方式：
+
+```text
+双击 打开行动清单.command
+```
+
+它会自动检查 `4174` 端口，如果服务还没启动，就启动本地服务，并打开浏览器。
+
+命令行方式：
 
 ```bash
 npm start
