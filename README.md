@@ -5,6 +5,12 @@
 > 负责 Agent：`9004-行动清单-master-agent`
 > 首版日期：2026-05-28
 
+GitHub 仓库：
+
+```text
+https://github.com/bladydora/bladydora-to-do
+```
+
 这个目录是行动清单的本地可点击界面。它不直接读取滴答清单数据库，而是在 YING 工作区内维护一份可控的本地数据，方便人类手动点击，也方便 Codex/9004 通过自然语言或文件编辑维护。
 
 ## 启动
