@@ -19,6 +19,12 @@ macOS App 方式：
 双击 dist/Bladydora To Do.app
 ```
 
+已安装到系统应用程序目录：
+
+```text
+/Applications/Bladydora To Do.app
+```
+
 这个方式会打开一个普通 macOS 软件窗口，没有浏览器地址栏。App 内部使用 `4175` 端口启动本地服务，数据保存在：
 
 ```text

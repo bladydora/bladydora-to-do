@@ -52,7 +52,33 @@ function makeId(prefix = "task") {
 async function readJson() {
   await ensureDataFile();
   const raw = await readFile(dataPath, "utf8");
-  return JSON.parse(raw);
+  return migrateDb(JSON.parse(raw));
+}
+
+function migrateDb(db) {
+  db.meta ||= { schemaVersion: 1, updatedAt: nowIso() };
+  db.lists ||= [];
+  db.tags ||= [];
+  db.tasks ||= [];
+  db.focusSessions ||= [];
+
+  db.lists.forEach((list, index) => {
+    if (typeof list.order !== "number") list.order = index;
+    list.viewType ||= "list";
+    list.folderId ||= "";
+    list.listType ||= "task";
+    list.smartDisplay ||= "all";
+  });
+  db.tags.forEach((tag, index) => {
+    if (typeof tag.order !== "number") tag.order = index;
+    tag.parentId ||= "";
+  });
+  db.tasks.forEach((task) => {
+    task.detailMode ||= task.checkItems?.length ? "checklist" : "note";
+    if (!Array.isArray(task.checkItems)) task.checkItems = [];
+    task.priority ||= "none";
+  });
+  return db;
 }
 
 async function ensureDataFile() {
@@ -226,6 +252,8 @@ function applyNaturalLanguage(db, text) {
     reminderAt: "",
     repeat: "",
     tags: [],
+    detailMode: "note",
+    checkItems: [],
     source: "自然语言",
     owner: "人类",
     route: "待确认",
@@ -260,6 +288,8 @@ async function handleApi(req, res, url) {
       reminderAt: body.reminderAt || "",
       repeat: body.repeat || "",
       tags: Array.isArray(body.tags) ? body.tags : [],
+      detailMode: body.detailMode || "note",
+      checkItems: Array.isArray(body.checkItems) ? body.checkItems : [],
       source: body.source || "手动",
       owner: body.owner || "人类",
       route: body.route || "待确认",
@@ -302,6 +332,11 @@ async function handleApi(req, res, url) {
       id: makeId("list"),
       title,
       color: body.color || "#4f7cff",
+      order: db.lists.length,
+      viewType: body.viewType || "list",
+      folderId: body.folderId || "",
+      listType: body.listType || "task",
+      smartDisplay: body.smartDisplay || "all",
       archived: false
     };
     db.lists.push(list);
@@ -317,6 +352,43 @@ async function handleApi(req, res, url) {
     Object.assign(list, body);
     await writeJson(db);
     return sendJson(res, 200, list);
+  }
+
+  if (req.method === "POST" && path === "/api/lists/reorder") {
+    const body = await readBody(req);
+    const ids = Array.isArray(body.ids) ? body.ids : [];
+    ids.forEach((id, index) => {
+      const list = db.lists.find((item) => item.id === id);
+      if (list) list.order = index;
+    });
+    await writeJson(db);
+    return sendJson(res, 200, db.lists);
+  }
+
+  if (req.method === "POST" && path === "/api/tags") {
+    const body = await readBody(req);
+    const title = body.title?.trim();
+    if (!title) return sendError(res, 400, "Tag title is required");
+    const tag = {
+      id: makeId("tag"),
+      title,
+      color: body.color || "#4f7cff",
+      parentId: body.parentId || "",
+      order: db.tags.length
+    };
+    db.tags.push(tag);
+    await writeJson(db);
+    return sendJson(res, 201, tag);
+  }
+
+  const tagMatch = path.match(/^\/api\/tags\/([^/]+)$/);
+  if (tagMatch && req.method === "PATCH") {
+    const body = await readBody(req);
+    const tag = db.tags.find((item) => item.id === tagMatch[1]);
+    if (!tag) return sendError(res, 404, "Tag not found");
+    Object.assign(tag, body);
+    await writeJson(db);
+    return sendJson(res, 200, tag);
   }
 
   if (req.method === "POST" && path === "/api/focus-sessions") {
