@@ -209,6 +209,11 @@ function formatDue(dueDate) {
   return dueDate.slice(5).replace("-", "月") + "日";
 }
 
+function formatDateTimeLocal(date) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 function dueClass(task) {
   if (!task.dueDate || task.status !== "open") return "";
   if (task.dueDate < today()) return "overdue";
@@ -483,7 +488,7 @@ function renderFocusView() {
     <main class="main">
       <header class="main-header">
         <h1 class="main-title">番茄专注</h1>
-        <button class="icon-button" title="添加专注记录" data-finish-focus>${icon("plus")}</button>
+        <button class="icon-button" title="添加专注记录" data-add-focus-session>${icon("plus")}</button>
       </header>
       <section class="content">
         <div class="focus-view">
@@ -548,7 +553,53 @@ function renderModal() {
   if (!state.modal) return "";
   if (state.modal === "list") return renderListModal();
   if (state.modal === "tag") return renderTagModal();
+  if (state.modal === "focusRecord") return renderFocusRecordModal();
   return "";
+}
+
+function renderFocusRecordModal() {
+  const end = new Date();
+  const start = new Date(end.getTime() - 25 * 60 * 1000);
+  return `
+    <div class="modal-backdrop" data-close-modal>
+      <section class="settings-modal focus-record-modal" data-modal-panel>
+        <button class="modal-close-dot" data-close-modal title="关闭"></button>
+        <div class="modal-form full">
+          <h2>添加专注记录</h2>
+          <label class="modal-grid-row">
+            <span>专注任务</span>
+            <select class="modal-select" data-focus-record-task>
+              <option value="">不绑定任务</option>
+              ${openTasks().map((task) => `<option value="${task.id}" ${state.selectedTaskId === task.id ? "selected" : ""}>${escapeHtml(task.title)}</option>`).join("")}
+            </select>
+          </label>
+          <label class="modal-grid-row">
+            <span>开始时间</span>
+            <input class="modal-select" type="datetime-local" data-focus-record-start value="${formatDateTimeLocal(start)}" />
+          </label>
+          <label class="modal-grid-row">
+            <span>结束时间</span>
+            <input class="modal-select" type="datetime-local" data-focus-record-end value="${formatDateTimeLocal(end)}" />
+          </label>
+          <label class="modal-grid-row">
+            <span>类型</span>
+            <select class="modal-select" data-focus-record-mode>
+              <option value="pomodoro">番茄计时</option>
+              <option value="stopwatch">正计时</option>
+            </select>
+          </label>
+          <label class="modal-grid-row notes-row">
+            <span>专注笔记</span>
+            <textarea class="modal-textarea" data-focus-record-notes placeholder="记录你的想法..."></textarea>
+          </label>
+          <div class="modal-actions">
+            <button class="modal-cancel" data-close-modal>取消</button>
+            <button class="modal-save" data-save-focus-record>保存</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  `;
 }
 
 function renderListModal() {
@@ -816,9 +867,13 @@ function bindEvents() {
     render();
   });
 
+  document.querySelector("[data-add-focus-session]")?.addEventListener("click", () => {
+    state.modal = "focusRecord";
+    render();
+  });
+
   document.querySelector("[data-start-focus]")?.addEventListener("click", toggleTimer);
   document.querySelector("[data-reset-focus]")?.addEventListener("click", resetTimer);
-  document.querySelector("[data-finish-focus]")?.addEventListener("click", finishFocus);
 
   bindListDragging();
   bindModalEvents();
@@ -880,6 +935,7 @@ function bindModalEvents() {
   });
   document.querySelector("[data-save-list]")?.addEventListener("click", saveListFromModal);
   document.querySelector("[data-save-tag]")?.addEventListener("click", saveTagFromModal);
+  document.querySelector("[data-save-focus-record]")?.addEventListener("click", saveFocusRecordFromModal);
   document.querySelector("[data-modal-title]")?.focus();
 }
 
@@ -919,6 +975,32 @@ async function saveTagFromModal() {
   state.modal = null;
   state.selectedView = "tag";
   state.selectedTagId = tag.id;
+  render();
+}
+
+async function saveFocusRecordFromModal() {
+  const taskId = document.querySelector("[data-focus-record-task]")?.value || "";
+  const startedAtValue = document.querySelector("[data-focus-record-start]")?.value;
+  const endedAtValue = document.querySelector("[data-focus-record-end]")?.value;
+  const startedAt = new Date(startedAtValue);
+  const endedAt = new Date(endedAtValue);
+  if (Number.isNaN(startedAt.getTime()) || Number.isNaN(endedAt.getTime()) || endedAt <= startedAt) return;
+  const task = state.db.tasks.find((item) => item.id === taskId);
+  const session = await api("/api/focus-sessions", {
+    method: "POST",
+    body: {
+      taskId,
+      taskTitle: task?.title || "",
+      minutes: Math.max(1, Math.round((endedAt - startedAt) / 60000)),
+      startedAt: startedAt.toISOString(),
+      endedAt: endedAt.toISOString(),
+      mode: document.querySelector("[data-focus-record-mode]")?.value || "pomodoro",
+      notes: document.querySelector("[data-focus-record-notes]")?.value || ""
+    }
+  });
+  state.db.focusSessions.unshift(session);
+  if (task) task.focusMinutes = Number(task.focusMinutes || 0) + session.minutes;
+  state.modal = null;
   render();
 }
 

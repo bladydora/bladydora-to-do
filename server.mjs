@@ -399,8 +399,9 @@ async function handleApi(req, res, url) {
       taskTitle: body.taskTitle || "",
       minutes: Number(body.minutes || 25),
       startedAt: body.startedAt || nowIso(),
-      endedAt: nowIso(),
-      mode: body.mode || "pomodoro"
+      endedAt: body.endedAt || nowIso(),
+      mode: body.mode || "pomodoro",
+      notes: body.notes || ""
     };
     db.focusSessions.unshift(session);
     if (session.taskId) {
